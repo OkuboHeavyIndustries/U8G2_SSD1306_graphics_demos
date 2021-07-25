@@ -1,0 +1,226 @@
+
+#include <U8g2lib.h>
+#include "ArduinoLowPower.h"
+
+//Change this line to match your OLED
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
+
+
+// Set display stuff
+const int len = 60; // 128 native pixels / 4 pixels per cell = 32 virtual cells length
+const int ht = 20; // 64 native pixels / 4 pixels per cell = 16 virtual cells height
+const int pixelSize = 2; // Set how many native pixels = pixels per cell length or width
+const bool flipScreen = false; // If you need to flip the screen
+
+int r;
+int p;
+
+// Counter and seed value
+int seedValue = 0;
+int counter = 0;
+int maxCycles = 200; // 500 cycles per game * 0.1 sec per cycle = 50 second games
+
+// Initialize the board
+int board[len][ht];
+int newBoard[len][ht];
+
+// Function prototypes
+int countNeighbors(int, int);
+void drawBoard();
+void randomBoard();
+
+// Runs when powering on
+void setup(){
+ 
+
+ randomSeed(analogRead(A1));   
+ u8g2.begin();
+
+//Clear Screen
+ u8g2.firstPage();
+ do {
+// empty screen
+
+ } while ( u8g2.nextPage() );
+
+u8g2.clearBuffer();
+       clearOLED();
+    u8g2.firstPage();
+
+    bootsequence();
+   
+  // Seed the board
+  randomBoard();
+}
+
+// Main loop
+void loop() {
+  // Catch for number of cycles per game
+  if(counter == maxCycles){
+    randomSeed(seedValue);
+    randomBoard();
+    seedValue++;
+    counter = 0;
+    clearOLED();
+    int randomdelay = random(30,100);  //random number of seconds from 30 - 100 to wait between cases
+    int sleepytime = (randomdelay*1000);
+    LowPower.sleep(sleepytime);
+    
+    bootsequence();
+  }
+
+  // Draw the board, increment cycle counter
+  drawBoard();
+  makeNewBoard();
+  counter++;
+
+  // Do a 0.1 second delay
+  delay(50);
+}
+
+void drawBoard(){
+  //clearOLED();
+  //u8g2.nextPage();
+  
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_u8glib_4_tr);    // font for the title
+    u8g2.drawFrame(0, 0, 128,64);
+    u8g2.drawLine(0, 9, 128,9);
+    u8g2.drawStr(4, 7, "CONWAY'S GAME OF LIFE ");
+    u8g2.setCursor(105, 7);  
+    u8g2.print(seedValue + 1);
+    
+    u8g2.drawLine(0, 54, 128,54);
+    u8g2.drawStr(4, 61, "OKUBO HEAVY INDUSTRIES");
+    
+  for(int x=0; x<len; x++){
+    for(int y=0; y<ht; y++){
+      if(board[x][y] == 1){
+        u8g2.drawBox(x*pixelSize+4, y*pixelSize+12, pixelSize, pixelSize);
+        
+      }
+    }
+  }
+  
+  u8g2.sendBuffer();
+}
+
+int countNeighbors(int x, int y){
+  return board[x-1][y]+board[x-1][y-1]+board[x][y-1]+board[x+1][y-1]+board[x+1][y]+board[x+1][y+1]+board[x][y+1]+board[x-1][y+1];
+}
+
+void makeNewBoard(){
+  for(int x=0; x<len; x++){
+    for(int y=0; y<ht; y++){
+      int neighbors = countNeighbors(x, y);
+      if(board[x][y] == 1 && (neighbors == 2 || neighbors == 3)){
+        newBoard[x][y] = 1;
+      }
+      else if(board[x][y] == 1){
+        newBoard[x][y] = 0;
+      }
+      if(board[x][y] == 0 && (neighbors == 3)){
+        newBoard[x][y] = 1;
+      }
+      else if (board[x][y] == 0){
+        newBoard[x][y] = 0;
+      }
+    }
+  }
+  for(int x=0; x<len; x++){
+    for(int y=0; y<ht; y++){
+      board[x][y] = newBoard[x][y];
+    }
+  }
+}
+
+void randomBoard(){
+  for(int x=0; x<len; x++){
+    for(int y=0; y<ht; y++){
+      board[x][y] = random(0,2);
+    }
+  }
+}
+
+void clearOLED(){
+    u8g2.firstPage();  
+    do {
+    } while( u8g2.nextPage() );
+
+}
+
+void curser(){
+  for (int i = 0; i < 3; i++) {
+    
+    u8g2.setDrawColor(1);
+   // u8g2.clearBuffer();
+    u8g2.drawBox(r,p,3,5);
+    u8g2.sendBuffer();
+    delay(300);
+    
+   // u8g2.clearBuffer();
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(r,p,3,5);
+    u8g2.sendBuffer();
+    delay(300);
+    }
+} 
+
+   void bootsequence(){
+    
+    u8g2.clearBuffer();
+    u8g2.setDrawColor(1);
+    u8g2.drawBox(0,0,128,64);
+    u8g2.sendBuffer();
+    delay(100);
+    u8g2.setDrawColor(0);
+    u8g2.clearBuffer();
+    u8g2.drawBox(0,0,128,64);
+    u8g2.sendBuffer();
+    delay(500);
+    //cursor flash
+    r = 1;
+    p = 1;
+    curser();
+    
+   
+    u8g2.setDrawColor(1);
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_u8glib_4_tr);
+    u8g2.drawStr(1, 6, "BOOT SEQUENCE INITIATED...");
+    u8g2.sendBuffer();
+    r = 104;
+    p = 1;
+    curser();
+    //delay(2000);
+    //u8g2.setDrawColor(0);
+   // u8g2.drawBox(0,0,110,15);
+   // u8g2.sendBuffer();
+    u8g2.setDrawColor(1);
+
+    u8g2.drawStr(1, 14, "RUNNING STARTUP...");
+    u8g2.sendBuffer();
+    r = 74;
+    p = 9;
+   curser();
+    
+
+   u8g2.setDrawColor(1);
+   u8g2.drawStr(1, 21, "LOADING DATA...");
+   u8g2.sendBuffer();
+   u8g2.nextPage();
+   
+    r = 59;
+    p = 16;
+    curser();
+    
+    
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(1,1,110,25);
+    u8g2.sendBuffer();
+    u8g2.setDrawColor(1);
+    delay(100);
+    clearOLED(); 
+
+   }

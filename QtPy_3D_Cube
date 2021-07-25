@@ -1,0 +1,157 @@
+
+
+//3D_Cube for Arduino OLED module by Colin Ord, 9/1/2015
+//A port of my original JustBasic Cube_3D demo to the Arduino Uno using U8G library.
+//Ported to U8G2 by Okubo Heavy Industries
+
+#include <U8g2lib.h>
+
+//The following line will need changing depending on your screen
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
+
+float tx, nx, p;
+float ty, ny, py;
+float rot, rotx, roty, rotz, rotxx, rotyy, rotzz, rotxxx, rotyyy, rotzzz;
+int i; //0 to 360
+int fl, scale; //focal length
+int wireframe[18][2];
+int wireframe2[8][2];
+
+int originx = 64;
+int originy = 32; //32
+
+int front_depth = 20;
+int back_depth = -20;
+
+//Store cube vertices
+
+
+int fd = 0; //0=orthographic
+
+void Cube();
+void Pyramid();
+
+void setup(void)
+{
+ u8g2.begin();
+
+//Clear Screen
+ u8g2.firstPage();
+ do {
+// empty screen
+ } while ( u8g2.nextPage() );
+}
+
+void draw_vertices(void)
+{
+ u8g2.drawPixel (rotxxx, rotyyy);
+}
+
+void draw_wireframe(void)
+{
+ 
+ u8g2.drawLine(wireframe[0][0], wireframe[0][1], wireframe[1][0], wireframe[1][1]);
+ u8g2.drawLine(wireframe[1][0], wireframe[1][1], wireframe[2][0], wireframe[2][1]);
+ u8g2.drawLine(wireframe[2][0], wireframe[2][1], wireframe[3][0], wireframe[3][1]);
+ u8g2.drawLine(wireframe[3][0], wireframe[3][1], wireframe[0][0], wireframe[0][1]);
+
+
+ u8g2.drawLine(wireframe[4][0], wireframe[4][1], wireframe[5][0], wireframe[5][1]);
+ u8g2.drawLine(wireframe[5][0], wireframe[5][1], wireframe[6][0], wireframe[6][1]);
+ u8g2.drawLine(wireframe[6][0], wireframe[6][1], wireframe[7][0], wireframe[7][1]);
+ u8g2.drawLine(wireframe[7][0], wireframe[7][1], wireframe[4][0], wireframe[4][1]);
+
+ u8g2.drawLine(wireframe[0][0], wireframe[0][1], wireframe[4][0], wireframe[4][1]);
+ u8g2.drawLine(wireframe[1][0], wireframe[1][1], wireframe[5][0], wireframe[5][1]);
+ u8g2.drawLine(wireframe[2][0], wireframe[2][1], wireframe[6][0], wireframe[6][1]);
+ u8g2.drawLine(wireframe[3][0], wireframe[3][1], wireframe[7][0], wireframe[7][1]);
+
+}
+
+void draw_wireframe2(void)
+{
+ 
+ u8g2.drawLine(wireframe2[0][0], wireframe2[0][1], wireframe2[1][0], wireframe2[1][1]);
+ u8g2.drawLine(wireframe2[1][0], wireframe2[1][1], wireframe2[2][0], wireframe2[2][1]);
+ u8g2.drawLine(wireframe2[2][0], wireframe2[2][1], wireframe2[3][0], wireframe2[3][1]);
+ u8g2.drawLine(wireframe2[3][0], wireframe2[3][1], wireframe2[0][0], wireframe2[0][1]);
+
+ u8g2.drawLine(wireframe2[4][0], wireframe2[4][1], wireframe2[5][0], wireframe2[5][1]);
+ u8g2.drawLine(wireframe2[5][0], wireframe2[5][1], wireframe2[6][0], wireframe2[6][1]);
+ u8g2.drawLine(wireframe2[6][0], wireframe2[6][1], wireframe2[7][0], wireframe2[7][1]);
+ u8g2.drawLine(wireframe2[7][0], wireframe2[7][1], wireframe2[4][0], wireframe2[4][1]);
+
+ u8g2.drawLine(wireframe2[0][0], wireframe2[0][1], wireframe2[4][0], wireframe2[4][1]);
+ u8g2.drawLine(wireframe2[1][0], wireframe2[1][1], wireframe2[5][0], wireframe2[5][1]);
+ u8g2.drawLine(wireframe2[2][0], wireframe2[2][1], wireframe2[6][0], wireframe2[6][1]);
+ u8g2.drawLine(wireframe2[3][0], wireframe2[3][1], wireframe2[7][0], wireframe2[7][1]);
+
+ 
+
+ 
+
+}
+void Cube(){
+
+  int cube_vertex[8][3] = {
+  
+ {-20, -20, 20},
+ {20, -20, 20},
+ {20, 20, 20},
+ { -20, 20, 20},
+ { -20, -20, -20},
+ {20, -20, -20},
+ {20, 20, -20},
+ { -20, 20, -20},
+
+
+
+};
+  for (int angle = 0; angle <= 360; angle = angle + 3) {
+  u8g2.firstPage();
+  do {
+   for (int i = 0; i < 8; i++) {
+
+     rot = angle * 0.0174532; //0.0174532 = one degree
+//rotateY
+    rotz = cube_vertex[i][2] * cos(rot) - cube_vertex[i][0] * sin(rot);
+    rotx = cube_vertex[i][2] * sin(rot) + cube_vertex[i][0] * cos(rot);
+    roty = cube_vertex[i][1];
+//rotateX
+    rotyy = roty * cos(rot) - rotz * sin(rot);
+    rotzz = roty * sin(rot) + rotz * cos(rot);
+    rotxx = rotx;
+//rotateZ
+    rotxxx = rotxx * cos(rot) - rotyy * sin(rot);
+    rotyyy = rotxx * sin(rot) + rotyy * cos(rot);
+    rotzzz = rotzz;
+
+//orthographic projection
+    rotxxx = rotxxx + originx;
+    rotyyy = rotyyy + originy;
+
+//store new vertices values for wireframe drawing
+    wireframe[i][0] = rotxxx;
+    wireframe[i][1] = rotyyy;
+    wireframe[i][2] = rotzzz;
+
+     draw_vertices();
+   }
+
+    draw_wireframe();
+
+   
+   } while (u8g2.nextPage());
+ }
+}
+
+
+void loop(void)
+{
+//picture loop
+
+ Cube();
+ 
+}

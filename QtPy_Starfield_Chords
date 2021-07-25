@@ -1,0 +1,233 @@
+#include <U8g2lib.h>
+#include "ArduinoLowPower.h"
+
+// Set where to find the board
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
+int r;
+int p;
+int nFrames = 64;
+int n = 2;
+
+#define STARS 50
+#define DISPLAY_WIDTH 128
+#define DISPLAY_HEIGHT 64
+
+unsigned long previousMillis = 0; 
+const long interval = 10000; 
+
+float star_x[STARS], star_y[STARS], star_z[STARS]; 
+
+
+void setup(){
+ 
+    for (int i = 0; i < STARS; i++) 
+    initStar(i);
+    
+ randomSeed(analogRead(A1));   
+
+ 
+ u8g2.begin();
+
+//Clear Screen
+ u8g2.firstPage();
+ do {
+// empty screen
+
+ } while ( u8g2.nextPage() );
+
+u8g2.clearBuffer();
+       clearOLED();
+    u8g2.firstPage();
+
+    bootsequence();
+
+}
+
+void loop() {
+
+  //starfield
+  unsigned long currentMillis = millis();
+  previousMillis = currentMillis;
+  
+  while (currentMillis - previousMillis < interval) {
+    
+    
+  u8g2.clearBuffer();
+  showStarfield();
+  u8g2.nextPage();
+  currentMillis = millis();
+}
+
+
+
+  //Chords
+  for ( n=2; n < 11; n++)
+  {
+
+  for (int frame=0; frame < nFrames; frame++)
+  {
+    Chords(frame);
+  }
+
+  for (int frame=(nFrames-1); frame >= 0; frame--)
+  {
+    Chords(frame);
+  }
+
+  }
+  for ( n=9; n > 2; n--)
+  {
+
+  for (int frame=0; frame < nFrames; frame++)
+  {
+    Chords(frame);
+  }
+
+  for (int frame=(nFrames-1); frame >= 0; frame--)
+  {
+    Chords(frame);
+  }
+
+  }
+
+  //delay(10);
+  
+  
+  
+}
+
+void Chords(int frame)
+{
+  u8g2.clearBuffer();
+ 
+  //int n = 2;
+  int r = frame * 32 / nFrames;
+  float rot = frame * 2*PI / nFrames;
+  for (int i=0; i<(n-1); i++)
+  {
+    float a = rot + i * 2*PI / n;
+    int x1 = 64 + cos(a) * r;
+    int y1 = 32 + sin(a) * r;
+    for (int j=i+1; j<n; j++)
+    {
+      a = rot + j * 2*PI / n;
+      int x2 = 64 + cos(a) * r;
+      int y2 = 32 + sin(a) * r;
+      u8g2.drawLine(x1,y1, x2,y2);
+    }
+  }
+  u8g2.nextPage();
+}
+
+void clearOLED(){
+    u8g2.firstPage();  
+    do {
+    } while( u8g2.nextPage() );
+
+}
+
+void curser(){
+  for (int i = 0; i < 3; i++) {
+    
+    u8g2.setDrawColor(1);
+   // u8g2.clearBuffer();
+    u8g2.drawBox(r,p,3,5);
+    u8g2.sendBuffer();
+    delay(300);
+    
+   // u8g2.clearBuffer();
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(r,p,3,5);
+    u8g2.sendBuffer();
+    delay(300);
+    }
+} 
+
+   void bootsequence(){
+    
+    u8g2.clearBuffer();
+    u8g2.setDrawColor(1);
+    u8g2.drawBox(0,0,128,64);
+    u8g2.sendBuffer();
+    delay(100);
+    u8g2.setDrawColor(0);
+    u8g2.clearBuffer();
+    u8g2.drawBox(0,0,128,64);
+    u8g2.sendBuffer();
+    delay(500);
+    //cursor flash
+    r = 1;
+    p = 1;
+    curser();
+    
+   
+    u8g2.setDrawColor(1);
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_u8glib_4_tr);
+    u8g2.drawStr(1, 6, "BOOT SEQUENCE INITIATED...");
+    u8g2.sendBuffer();
+    r = 104;
+    p = 1;
+    curser();
+    //delay(2000);
+    //u8g2.setDrawColor(0);
+   // u8g2.drawBox(0,0,110,15);
+   // u8g2.sendBuffer();
+    u8g2.setDrawColor(1);
+
+    u8g2.drawStr(1, 14, "RUNNING STARTUP...");
+    u8g2.sendBuffer();
+    r = 74;
+    p = 9;
+   curser();
+    
+
+   u8g2.setDrawColor(1);
+   u8g2.drawStr(1, 21, "LOADING DATA...");
+   u8g2.sendBuffer();
+   u8g2.nextPage();
+   
+    r = 59;
+    p = 16;
+    curser();
+    
+    
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(1,1,110,25);
+    u8g2.sendBuffer();
+    u8g2.setDrawColor(1);
+    delay(100);
+    clearOLED(); 
+
+   }
+
+
+   void initStar(int i) {
+  star_x[i] = random(-100, 100);
+  star_y[i] = random(-100, 100);
+  star_z[i] = random(100, 500);
+}
+
+void showStarfield() {
+  int x,y;
+  int centrex,centrey;
+  
+  centrex = DISPLAY_WIDTH / 2;
+  centrey = DISPLAY_HEIGHT / 2; 
+  
+  for (int i = 0; i < STARS; i++) {
+    star_z[i] = star_z[i] - 7;
+
+    x = star_x[i] / star_z[i] * 100 + centrex;
+    y = star_y[i] / star_z[i] * 100 + centrey;
+
+    if(
+        (x < 0)  ||        (x > DISPLAY_WIDTH) || 
+        (y < 0)  ||        (y > DISPLAY_HEIGHT) ||
+        (star_z[i] < 1)      
+      )      initStar(i);
+    u8g2.drawPixel(x, y);
+  }
+  u8g2.nextPage();
+}  

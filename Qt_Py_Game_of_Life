@@ -2,7 +2,6 @@
 #include <U8g2lib.h>
 #include "ArduinoLowPower.h"
 
-//Change this line to match your OLED
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 
@@ -32,7 +31,8 @@ void randomBoard();
 
 // Runs when powering on
 void setup(){
- 
+ pinMode(0, OUTPUT);
+ digitalWrite(0,HIGH);//Screen power pin attached to pin 0 on the QtPy
 
  randomSeed(analogRead(A1));   
  u8g2.begin();
@@ -63,11 +63,13 @@ void loop() {
     seedValue++;
     counter = 0;
     clearOLED();
+    digitalWrite(A0,LOW);//turn off screen before sleep
     int randomdelay = random(30,100);  //random number of seconds from 30 - 100 to wait between cases
     int sleepytime = (randomdelay*1000);
     LowPower.sleep(sleepytime);
-    
-    bootsequence();
+    digitalWrite(A0,HIGH);//turn on screen again when sleep ends
+    u8g2.begin();
+    bootsequence();//purely for theatrical effect
   }
 
   // Draw the board, increment cycle counter
@@ -89,10 +91,12 @@ void drawBoard(){
     u8g2.drawLine(0, 9, 128,9);
     u8g2.drawStr(4, 7, "CONWAY'S GAME OF LIFE ");
     u8g2.setCursor(105, 7);  
-    u8g2.print(seedValue + 1);
+    u8g2.print(seedValue + 1);//number of rounds played
     
     u8g2.drawLine(0, 54, 128,54);
     u8g2.drawStr(4, 61, "OKUBO HEAVY INDUSTRIES");
+    u8g2.drawFrame(102,57,22,4);
+    u8g2.drawBox(102,58, counter/9 ,2); //progress bar
     
   for(int x=0; x<len; x++){
     for(int y=0; y<ht; y++){

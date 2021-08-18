@@ -1,0 +1,49 @@
+#include <U8g2lib.h>
+#include "ArduinoLowPower.h"
+
+const int i = 64;
+const int j = 32;
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
+void setup() {
+  // put your setup code here, to run once:
+  randomSeed(analogRead(A1));   
+ u8g2.begin();
+
+//Clear Screen
+ u8g2.firstPage();
+ do {
+// empty screen
+
+ } while ( u8g2.nextPage() );
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  for(int y=0; y<64; y++){
+    for(int x=32; x<96; x++){
+
+      int le1 = (i - x);
+      int le2 = (j - y);
+      int hypsq = sq(le1) + sq(le2);
+      //int hyp = sqrt(hypsq);
+      
+
+      int randomdraw = random(1,hypsq);
+      if (hypsq < 500 && randomdraw < 30) {
+      
+      u8g2.setDrawColor(1);
+     }
+     else {
+      u8g2.setDrawColor(0);
+     }
+      u8g2.drawPixel(x,y);
+      
+      //u8g2.sendBuffer();
+    }
+  }
+u8g2.nextPage();
+
+}

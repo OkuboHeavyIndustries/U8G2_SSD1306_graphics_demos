@@ -38,28 +38,40 @@ void loop() {
       }
 
     
+     double lat_val, lng_val, alt_m_val;
      uint8_t hr_val, min_val, sec_val, hr_val_jp, sats_val;
-     bool loc_valid, time_valid;
-    
+     bool loc_valid, alt_valid, time_valid, sats_valid;
+     lat_val = gps.location.lat();  /* Get latitude data */
+     loc_valid = gps.location.isValid(); /* Check if valid location data is available */
+     lng_val = gps.location.lng(); /* Get longtitude data */
+     alt_m_val = gps.altitude.meters();  /* Get altitude data in meters */
+     alt_valid = gps.altitude.isValid(); /* Check if valid altitude data is available */
      hr_val = gps.time.hour(); /* Get hour */
      min_val = gps.time.minute();  /* Get minutes */
      sec_val = gps.time.second();  /* Get seconds */
      time_valid = gps.time.isValid();  /* Check if valid time data is available */
-     
+      int year_val = (gps.date.year());
+      uint8_t month_val = (gps.date.month());
+      uint8_t day_val = (gps.date.day());
+     sats_valid = gps.satellites.isValid();
+     sats_val = gps.satellites.value();
 
      if (hr_val < 15) { hr_val_jp = hr_val + 9;  // convert UTC to Japan time zone
      }
      else {hr_val_jp = hr_val -15;
      }
 
-     
-          char time_string[32];
-          sprintf(time_string, "Time : %02d:%02d:%02d \n", hr_val_jp, min_val, sec_val);
-              
+          int lat_val_int = lat_val;
+          int lng_val_int = lng_val;
+          int alt_m_val_int = alt_m_val;
+          char time_string[254];
+          sprintf(time_string, "%02d:%02d:%02d \n %02d:%02d:%02d \n %02d \n %02d \n %02d \n", year_val,month_val,day_val,hr_val_jp, min_val, sec_val, lat_val_int, lng_val_int, alt_m_val_int );
+           
  // Create the QR code
     QRCode qrcode;
     uint8_t qrcodeData[qrcode_getBufferSize(3)];
-    qrcode_initText(&qrcode, qrcodeData, 3, HIGH, (time_string));
+    qrcode_initText(&qrcode, qrcodeData, 3, LOW, (time_string));
+    //qrcode_initText(&qrcode, qrcodeData, 3, HIGH, "https://www.apple.com");
 
    u8g2.clearBuffer();
    for (uint8_t y = 0; y < qrcode.size; y++) {
@@ -67,13 +79,14 @@ void loop() {
           if (qrcode_getModule(&qrcode,x,y)){
             uint8_t u = y*2;
             uint8_t v = x*2;
-            u8g2.drawBox(u+30,v+3,2,2);
+            u8g2.drawBox(u+35,v+6,2,2);
           }
         }
 
         
     }
-
+    u8g2.setCursor(1, 5);  
+    u8g2.print(time_string);
     u8g2.sendBuffer();
 
 }
